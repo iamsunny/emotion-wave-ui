@@ -114,12 +114,23 @@ const generateDummyData = (count: number) => {
   return dummyData;
 };
 
+// Interface to match the expected type for emotion_checkins table
+interface EmotionCheckin {
+  emoji: string;
+  label: string;
+  score: number;
+  reason: string | null;
+  created_at: string;
+  user_id?: string | null;
+  id?: string;
+}
+
 // Main function to insert dummy data
 export const insertDummyData = async (count: number = 1000) => {
   try {
     toast.info(`Generating ${count} dummy records...`);
     
-    const dummyData = generateDummyData(count);
+    const dummyData = generateDummyData(count) as EmotionCheckin[];
     
     // Insert in batches to avoid timeouts
     const batchSize = 25;
@@ -128,17 +139,17 @@ export const insertDummyData = async (count: number = 1000) => {
     for (let i = 0; i < dummyData.length; i += batchSize) {
       const batch = dummyData.slice(i, i + batchSize);
       
-      // Using the emotion_analytics view instead of emotion_checkins table
-      // as the view may have different RLS policies or be more permissive
+      // Using the emotion_checkins table instead of emotion_analytics view
+      // as we have proper typing for it
       const { error } = await supabase
-        .from('emotion_analytics')
+        .from('emotion_checkins')
         .insert(batch);
         
       if (error) {
         console.error('Error in batch insert:', error);
         // Try inserting one by one if batch fails
         for (const item of batch) {
-          const { error: singleError } = await supabase.from('emotion_analytics').insert([item]);
+          const { error: singleError } = await supabase.from('emotion_checkins').insert([item]);
           if (!singleError) {
             inserted++;
             if (inserted % 50 === 0) {
