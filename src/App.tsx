@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import CheckIn from "./pages/CheckIn";
 import Rewards from "./pages/Rewards";
 import Events from "./pages/Events";
+import Dashboard from "./pages/Dashboard"; // Import the Dashboard component
 import NotFound from "./pages/NotFound";
 import NudgeReminder from "./components/NudgeReminder";
 
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/check-in" element={<CheckIn />} />
           <Route path="/rewards" element={<Rewards />} />
           <Route path="/events" element={<Events />} />
+          <Route path="/dashboard" element={<Dashboard />} /> {/* Add new Dashboard route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
         <NudgeReminder firstName="Buddy" />
