@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import Navigation from "@/components/Navigation";
 import EmojiCard from "@/components/EmojiCard";
@@ -14,6 +13,7 @@ interface EmotionResponse {
 const CheckIn: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<EmotionResponse | null>(null);
+  const [expandedEmoji, setExpandedEmoji] = useState<string | null>(null);
 
   const emotions = [
     { emoji: "😄", label: "Happy" },
@@ -37,6 +37,7 @@ const CheckIn: React.FC = () => {
         timestamp: new Date(),
       });
       setIsLoading(false);
+      setExpandedEmoji(null);
     }, 1500);
   };
 
@@ -112,6 +113,8 @@ const CheckIn: React.FC = () => {
                 emoji={emotion.emoji}
                 label={emotion.label}
                 onSubmit={handleSubmit}
+                isExpanded={expandedEmoji === emotion.emoji}
+                onExpand={(emoji) => setExpandedEmoji(emoji === expandedEmoji ? null : emoji)}
               />
             ))}
           </div>

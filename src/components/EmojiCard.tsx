@@ -9,10 +9,17 @@ interface EmojiCardProps {
   emoji: string;
   label: string;
   onSubmit: (emoji: string, reason: string) => void;
+  isExpanded: boolean;
+  onExpand: (emoji: string) => void;
 }
 
-const EmojiCard: React.FC<EmojiCardProps> = ({ emoji, label, onSubmit }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+const EmojiCard: React.FC<EmojiCardProps> = ({ 
+  emoji, 
+  label, 
+  onSubmit,
+  isExpanded,
+  onExpand
+}) => {
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -25,7 +32,6 @@ const EmojiCard: React.FC<EmojiCardProps> = ({ emoji, label, onSubmit }) => {
     setTimeout(() => {
       onSubmit(emoji, reason);
       setIsSubmitting(false);
-      setIsExpanded(false);
       setReason("");
     }, 1500);
   };
@@ -54,6 +60,13 @@ const EmojiCard: React.FC<EmojiCardProps> = ({ emoji, label, onSubmit }) => {
     }
   };
 
+  // Reset reason when card is collapsed
+  React.useEffect(() => {
+    if (!isExpanded) {
+      setReason("");
+    }
+  }, [isExpanded]);
+
   return (
     <Card 
       className={cn(
@@ -65,17 +78,22 @@ const EmojiCard: React.FC<EmojiCardProps> = ({ emoji, label, onSubmit }) => {
       {!isExpanded ? (
         <Button
           variant="ghost"
-          className="w-full h-full p-6 flex flex-col gap-2 hover:bg-muted/50 hover:scale-[1.02] transition-all"
-          onClick={() => setIsExpanded(true)}
+          className={cn(
+            "w-full h-full p-6 flex flex-col gap-2 hover:bg-muted/50 hover:scale-[1.02] transition-all",
+            "focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          )}
+          onClick={() => onExpand(emoji)}
         >
           <div className="text-4xl md:text-5xl mb-2">{emoji}</div>
           <div className="font-medium text-sm md:text-base">{label}</div>
         </Button>
       ) : (
-        <div className="p-4 flex flex-col h-full">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-2xl">{emoji}</span>
-            <span className="font-medium">{label}</span>
+        <div className="p-4 flex flex-col h-full animate-fade-in">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">{emoji}</span>
+              <span className="font-medium">{label}</span>
+            </div>
           </div>
           
           <Textarea
@@ -84,12 +102,13 @@ const EmojiCard: React.FC<EmojiCardProps> = ({ emoji, label, onSubmit }) => {
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             disabled={isSubmitting}
+            autoFocus
           />
           
           <div className="flex gap-2 mt-auto">
             <Button
               variant="outline"
-              onClick={() => setIsExpanded(false)}
+              onClick={() => onExpand(emoji)}
               disabled={isSubmitting}
               className="flex-1"
             >
