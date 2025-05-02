@@ -9,6 +9,7 @@ import CheckIn from "./pages/CheckIn";
 import Rewards from "./pages/Rewards";
 import Events from "./pages/Events";
 import NotFound from "./pages/NotFound";
+import NudgeReminder from "./components/NudgeReminder";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/events" element={<Events />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <NudgeReminder firstName="Buddy" />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

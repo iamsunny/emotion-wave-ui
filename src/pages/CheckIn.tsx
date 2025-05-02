@@ -1,9 +1,10 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import EmojiCard from "@/components/EmojiCard";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface EmotionResponse {
   emoji: string;
@@ -15,6 +16,14 @@ const CheckIn: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<EmotionResponse | null>(null);
   const [expandedEmoji, setExpandedEmoji] = useState<string | null>(null);
+
+  // Update localStorage on successful check-in
+  useEffect(() => {
+    if (response) {
+      localStorage.setItem("hasCheckedInToday", "true");
+      localStorage.setItem("lastCheckInDate", new Date().toDateString());
+    }
+  }, [response]);
 
   const emotions = [
     { emoji: "😄", label: "Happy" },
