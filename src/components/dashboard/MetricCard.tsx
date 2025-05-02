@@ -1,4 +1,3 @@
-
 import React from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import {
@@ -30,6 +29,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
   color = "primary",
   isLoading = false,
 }) => {
+  
   const bgColorMap = {
     primary: "bg-primary/10",
     secondary: "bg-secondary/10",

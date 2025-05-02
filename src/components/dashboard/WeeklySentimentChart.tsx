@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   LineChart,
@@ -95,6 +94,8 @@ const WeeklySentimentChart: React.FC<WeeklySentimentChartProps> = ({
               <TabsTrigger value="line">Line</TabsTrigger>
               <TabsTrigger value="area">Area</TabsTrigger>
             </TabsList>
+            <TabsContent value="line" className="hidden">Line Chart</TabsContent>
+            <TabsContent value="area" className="hidden">Area Chart</TabsContent>
           </Tabs>
           <Select
             value={selectedTeam}
