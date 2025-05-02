@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import Navigation from "@/components/Navigation";
 import EmojiCard from "@/components/EmojiCard";
@@ -70,43 +71,43 @@ const CheckIn: React.FC = () => {
 
       <div id="confetti-container" className="fixed inset-0 pointer-events-none z-10"></div>
       
-      <main className="flex-1 container max-w-4xl mx-auto px-4 pt-12 pb-20 sm:pb-12 sm:pt-24">
-        <h1 className="text-2xl md:text-3xl font-bold mb-2">Emotion Check-In</h1>
-        <p className="text-muted-foreground mb-8">How are you feeling right now?</p>
+      <main className="flex-1 container max-w-5xl mx-auto px-4 py-6 md:py-10 lg:py-12">
+        <h1 className="text-3xl md:text-4xl font-bold mb-3">Emotion Check-In</h1>
+        <p className="text-muted-foreground mb-8 md:mb-10 text-lg">How are you feeling right now?</p>
         
         {response ? (
-          <Card className="p-6 mb-8 bg-gradient-to-r from-primary/10 to-secondary/5 animate-fade-in">
-            <div className="mb-4">
-              <div className="text-sm text-muted-foreground mb-1">
+          <Card className="p-6 md:p-8 mb-8 bg-gradient-to-r from-primary/10 to-secondary/5 animate-fade-in">
+            <div className="mb-5">
+              <div className="text-sm text-muted-foreground mb-2">
                 You felt {response.emoji}
               </div>
-              <p className="text-lg font-medium italic">"{response.reason}"</p>
+              <p className="text-lg md:text-xl font-medium italic">"{response.reason}"</p>
             </div>
             
-            <div className="border-t pt-4 mt-4">
-              <div className="flex items-start gap-3">
-                <div className="bg-primary/20 p-2 rounded-full text-xl">🤖</div>
+            <div className="border-t pt-5 mt-5">
+              <div className="flex items-start gap-4">
+                <div className="bg-primary/20 p-3 rounded-full text-2xl">🤖</div>
                 <div>
-                  <h3 className="font-semibold mb-1">Buddy's Response:</h3>
-                  <p>{getResponseMessage(response.emoji)}</p>
+                  <h3 className="font-semibold mb-2 text-lg">Buddy's Response:</h3>
+                  <p className="text-base md:text-lg">{getResponseMessage(response.emoji)}</p>
                 </div>
               </div>
             </div>
             
             <button 
-              className="mt-6 text-primary hover:text-primary/80 font-medium"
+              className="mt-6 text-primary hover:text-primary/80 font-medium text-lg"
               onClick={() => setResponse(null)}
             >
               Submit another response
             </button>
           </Card>
         ) : isLoading ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-            <p>Analyzing your response...</p>
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="h-12 w-12 text-primary animate-spin mb-5" />
+            <p className="text-lg">Analyzing your response...</p>
           </div>
         ) : (
-          <div className="emoji-grid">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
             {emotions.map((emotion) => (
               <EmojiCard
                 key={emotion.emoji}
