@@ -24,12 +24,12 @@ const NudgeReminder: React.FC<NudgeReminderProps> = ({ firstName = "friend" }) =
       localStorage.removeItem("hasCheckedInToday");
     }
 
-    // For development & testing purposes, show the nudge after 10 seconds (10000ms)
+    // For POC purposes, show the nudge after 30 seconds (30000ms)
     const timer = setTimeout(() => {
       if (!hasCheckedInToday) {
         setIsVisible(true);
       }
-    }, 10000); // 10 seconds for testing
+    }, 30000); // 30 seconds for POC
     
     // Original timeout (5 minutes = 300000ms)
     // const timer = setTimeout(() => {
