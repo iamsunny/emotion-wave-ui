@@ -107,7 +107,12 @@ const CheckIn: React.FC = () => {
             <p className="text-lg">Analyzing your response...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
+          <div className={cn(
+            "grid gap-4 md:gap-6",
+            expandedEmoji 
+              ? "grid-cols-1 md:grid-cols-1 lg:grid-cols-1" 
+              : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4"
+          )}>
             {emotions.map((emotion) => (
               <EmojiCard
                 key={emotion.emoji}

@@ -71,7 +71,7 @@ const EmojiCard: React.FC<EmojiCardProps> = ({
     <Card 
       className={cn(
         "transition-all duration-300 ease-in-out overflow-hidden",
-        isExpanded ? "max-h-[350px]" : "max-h-[160px]",
+        isExpanded ? "max-h-[400px]" : "max-h-[160px]", // Increased max height
         isSubmitting ? "opacity-80" : "opacity-100"
       )}
     >
@@ -98,7 +98,7 @@ const EmojiCard: React.FC<EmojiCardProps> = ({
           
           <Textarea
             placeholder="Why do you feel this way?"
-            className="min-h-[120px] mb-5 resize-none text-base p-4 rounded-xl"
+            className="min-h-[150px] mb-6 resize-none text-base p-4 rounded-xl"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             disabled={isSubmitting}
@@ -110,7 +110,7 @@ const EmojiCard: React.FC<EmojiCardProps> = ({
               variant="outline"
               onClick={() => onExpand(emoji)}
               disabled={isSubmitting}
-              className="flex-1 py-5"
+              className="flex-1 py-2"
               size="lg"
             >
               Cancel
@@ -121,7 +121,7 @@ const EmojiCard: React.FC<EmojiCardProps> = ({
                 createConfetti();
               }}
               disabled={!reason.trim() || isSubmitting}
-              className="flex-1 py-5"
+              className="flex-1 py-2"
               size="lg"
             >
               {isSubmitting ? (
