@@ -19,7 +19,7 @@ import { insertDummyData } from "@/utils/insertDummyData";
 
 const Dashboard = () => {
   const [demoImportLoading, setDemoImportLoading] = React.useState(false);
-  const { isLoading, overviewMetrics, weeklyMoodData } = useDashboardData();
+  const { isLoading, overviewMetrics, weeklyMoodData, refetchData } = useDashboardData();
 
   const handleGenerateDummyData = async () => {
     setDemoImportLoading(true);
@@ -27,12 +27,13 @@ const Dashboard = () => {
       const success = await insertDummyData(1000);
       if (success) {
         toast.success("Successfully generated dummy records!");
-        // Reload page to refresh data
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        
+        // Refresh data after successful insertion
+        await refetchData();
+        
+        toast.info("Dashboard data refreshed!");
       } else {
-        toast.error("Failed to generate all dummy records. Check console for details.");
+        toast.error("Failed to generate dummy records. Check console for details.");
       }
     } catch (error) {
       console.error("Error generating dummy data:", error);

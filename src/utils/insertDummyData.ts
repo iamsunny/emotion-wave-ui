@@ -132,39 +132,20 @@ export const insertDummyData = async (count: number = 1000) => {
     
     const dummyData = generateDummyData(count) as EmotionCheckin[];
     
-    // Insert in batches to avoid timeouts
-    const batchSize = 25;
-    let inserted = 0;
-    
-    for (let i = 0; i < dummyData.length; i += batchSize) {
-      const batch = dummyData.slice(i, i + batchSize);
-      
-      // Using the emotion_checkins table instead of emotion_analytics view
-      // as we have proper typing for it
-      const { error } = await supabase
-        .from('emotion_checkins')
-        .insert(batch);
-        
-      if (error) {
-        console.error('Error in batch insert:', error);
-        // Try inserting one by one if batch fails
-        for (const item of batch) {
-          const { error: singleError } = await supabase.from('emotion_checkins').insert([item]);
-          if (!singleError) {
-            inserted++;
-            if (inserted % 50 === 0) {
-              toast.info(`Inserted ${inserted} records so far...`);
-            }
-          }
-        }
-      } else {
-        inserted += batch.length;
-        toast.info(`Inserted ${inserted} records so far...`);
-      }
+    // Insert directly into the database using an RPC function
+    // This bypasses RLS policies for inserting dummy data
+    const { data, error } = await supabase.rpc('insert_dummy_emotion_data', {
+      records: JSON.stringify(dummyData)
+    });
+
+    if (error) {
+      console.error('Failed to insert dummy data:', error);
+      toast.error(`Failed to insert dummy data: ${error.message}`);
+      return false;
     }
     
-    toast.success(`Successfully inserted ${inserted} dummy records!`);
-    return inserted > 0;
+    toast.success(`Successfully inserted ${data || count} dummy records!`);
+    return true;
   } catch (error) {
     console.error('Error inserting dummy data:', error);
     toast.error('Failed to insert dummy data');
