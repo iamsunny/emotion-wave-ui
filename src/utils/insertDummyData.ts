@@ -115,7 +115,7 @@ const generateDummyData = (count: number) => {
 };
 
 // Main function to insert dummy data
-export const insertDummyData = async (count: number = 100) => {
+export const insertDummyData = async (count: number = 1000) => {
   try {
     toast.info(`Generating ${count} dummy records...`);
     

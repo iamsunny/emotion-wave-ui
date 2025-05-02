@@ -2,7 +2,7 @@
 import React from "react";
 import { Book, Users, Gauge, Activity, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/sonner";
 import { motion } from "framer-motion";
 
@@ -24,9 +24,9 @@ const Dashboard = () => {
   const handleGenerateDummyData = async () => {
     setDemoImportLoading(true);
     try {
-      const success = await insertDummyData(100);
+      const success = await insertDummyData(1000);
       if (success) {
-        toast.success("Successfully generated 100 dummy records!");
+        toast.success("Successfully generated 1000 dummy records!");
         // Reload page to refresh data
         window.location.reload();
       }
@@ -52,7 +52,7 @@ const Dashboard = () => {
           className="flex items-center"
         >
           <Database className="mr-2 h-4 w-4" />
-          {demoImportLoading ? "Generating..." : "Generate 100 Demo Records"}
+          {demoImportLoading ? "Generating..." : "Generate 1000 Demo Records"}
         </Button>
       </div>
 
@@ -85,7 +85,7 @@ const Dashboard = () => {
           title="Generate Data"
           value="Demo Data"
           icon={<Database className="h-5 w-5" />}
-          subtitle="Click to add 100 records"
+          subtitle="Click to add 1000 records"
           color="success"
           isLoading={demoImportLoading}
           onClick={handleGenerateDummyData}
@@ -94,6 +94,9 @@ const Dashboard = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+        </TabsList>
         <TabsContent value="overview" className="space-y-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
