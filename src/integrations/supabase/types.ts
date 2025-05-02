@@ -73,7 +73,10 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      insert_dummy_emotion_data: {
+        Args: { records: Json }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
