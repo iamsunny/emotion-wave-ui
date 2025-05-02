@@ -1,182 +1,150 @@
 
-import React, { useState } from "react";
+import React from "react";
+import { Book, Users, Gauge, Activity, Database } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { toast } from "@/components/ui/sonner";
 import { motion } from "framer-motion";
-import { Smile, Users, TrendingUp, TrendingDown, Plus, Loader2 } from "lucide-react";
-import Navigation from "@/components/Navigation";
+
+// Component imports
 import MetricCard from "@/components/dashboard/MetricCard";
+import WeeklySentimentChart from "@/components/dashboard/WeeklySentimentChart";
 import EngagementHeatmap from "@/components/dashboard/EngagementHeatmap";
 import ChurnRiskTable from "@/components/dashboard/ChurnRiskTable";
 import EngagedEmployeesTable from "@/components/dashboard/EngagedEmployeesTable";
-import WeeklySentimentChart from "@/components/dashboard/WeeklySentimentChart";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { insertDummyData } from "@/utils/insertDummyData";
+
+// Custom hooks
 import { useDashboardData } from "@/hooks/useDashboardData";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { toast } from "@/components/ui/sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { insertDummyData } from "@/utils/insertDummyData";
 
 const Dashboard = () => {
+  const [demoImportLoading, setDemoImportLoading] = React.useState(false);
   const { isLoading, overviewMetrics, weeklyMoodData } = useDashboardData();
-  const [isGeneratingData, setIsGeneratingData] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
 
   const handleGenerateDummyData = async () => {
-    setIsGeneratingData(true);
+    setDemoImportLoading(true);
     try {
-      await insertDummyData(1000);
-      toast.success("Dummy data generated! Refresh the page to see the results.");
+      const success = await insertDummyData(100);
+      if (success) {
+        toast.success("Successfully generated 100 dummy records!");
+        // Reload page to refresh data
+        window.location.reload();
+      }
     } catch (error) {
       console.error("Error generating dummy data:", error);
       toast.error("Failed to generate dummy data");
     } finally {
-      setIsGeneratingData(false);
+      setDemoImportLoading(false);
     }
   };
 
   return (
-    <div className="pb-24 pt-16 sm:pt-0 sm:pb-0">
-      <Navigation />
-      
-      <div className="container max-w-5xl mx-auto px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+    <div className="container mx-auto py-8 max-w-7xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Team Wellness Dashboard</h1>
+          <p className="text-muted-foreground">Monitor your team's emotional well-being</p>
+        </div>
+        <Button 
+          variant="outline" 
+          onClick={handleGenerateDummyData} 
+          disabled={demoImportLoading}
+          className="flex items-center"
         >
-          <div className="flex flex-wrap justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">Pulse Dashboard</h1>
-            
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="flex items-center gap-1"
-                  disabled={isGeneratingData}
-                >
-                  {isGeneratingData ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                  ) : (
-                    <Plus className="h-4 w-4 mr-1" />
-                  )}
-                  Generate Sample Data
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Generate Sample Data</DialogTitle>
-                  <DialogDescription>
-                    This will create 1,000 random mood check-ins from the past 30 days to visualize the dashboard with realistic data.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button 
-                    onClick={handleGenerateDummyData} 
-                    disabled={isGeneratingData}
-                  >
-                    {isGeneratingData ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" /> 
-                        Generating...
-                      </>
-                    ) : (
-                      "Generate Data"
-                    )}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-          
-          <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="details">Team Details</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="overview" className="space-y-8">
-              {/* Overview Metrics */}
-              <section>
-                <h2 className="text-lg font-semibold mb-4">Overview Metrics</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <MetricCard
-                    title="Avg Mood Score"
-                    value={isLoading ? "..." : overviewMetrics.avgMoodScore}
-                    icon={<Smile />}
-                    trend={overviewMetrics.trend}
-                    subtitle={`${overviewMetrics.trendValue} trend`}
-                    color="primary"
-                    isLoading={isLoading}
-                  />
-                  <MetricCard
-                    title="Check-in Rate"
-                    value={isLoading ? "..." : `${overviewMetrics.checkInRate}%`}
-                    icon={<Users />}
-                    trend={overviewMetrics.checkInRate > 70 ? "up" : overviewMetrics.checkInRate > 40 ? "neutral" : "down"}
-                    subtitle="of employees participated"
-                    color="secondary"
-                    isLoading={isLoading}
-                  />
-                  <MetricCard
-                    title="Most Common Mood"
-                    value={isLoading ? "..." : `${overviewMetrics.mostCommonMood.emoji} ${overviewMetrics.mostCommonMood.label}`}
-                    icon={<Smile />}
-                    subtitle="among employees"
-                    color="accent"
-                    isLoading={isLoading}
-                  />
-                  <MetricCard
-                    title="Team Pulse Trend"
-                    value={isLoading ? "..." : overviewMetrics.trendValue}
-                    icon={overviewMetrics.trend === "up" ? <TrendingUp /> : overviewMetrics.trend === "down" ? <TrendingDown /> : <Smile />}
-                    subtitle="Weekly pattern"
-                    color={overviewMetrics.trend === "up" ? "success" : overviewMetrics.trend === "down" ? "danger" : "muted"}
-                    isLoading={isLoading}
-                  />
-                </div>
-              </section>
-              
-              {/* Weekly Sentiment Chart */}
-              <WeeklySentimentChart 
-                weeklyMoodData={weeklyMoodData} 
-                isLoading={isLoading} 
-              />
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Churn Risk Highlights */}
-                <section>
-                  <h2 className="text-lg font-semibold mb-4">Churn Risk Highlights</h2>
-                  <ChurnRiskTable />
-                </section>
-                
-                {/* Most Engaged Employees */}
-                <section>
-                  <h2 className="text-lg font-semibold mb-4">Most Engaged Employees</h2>
-                  <EngagedEmployeesTable />
-                </section>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="details">
-              {/* Engagement Streak Heatmap */}
-              <section className="mb-8">
-                <h2 className="text-lg font-semibold mb-4">Engagement Streak (Last 4 Weeks)</h2>
-                <Card className="p-6">
-                  <EngagementHeatmap />
-                </Card>
-              </section>
-            </TabsContent>
-          </Tabs>
-        </motion.div>
+          <Database className="mr-2 h-4 w-4" />
+          {demoImportLoading ? "Generating..." : "Generate 100 Demo Records"}
+        </Button>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <MetricCard
+          title="Average Mood Score"
+          value={overviewMetrics.avgMoodScore}
+          icon={<Gauge className="h-5 w-5" />}
+          subtitle={`${overviewMetrics.trendValue} this week`}
+          trend={overviewMetrics.trend}
+          isLoading={isLoading}
+        />
+        <MetricCard
+          title="Team Check-in Rate"
+          value={`${overviewMetrics.checkInRate}%`}
+          icon={<Activity className="h-5 w-5" />}
+          subtitle="Of team members"
+          color="secondary"
+          isLoading={isLoading}
+        />
+        <MetricCard
+          title="Most Common Mood"
+          value={overviewMetrics.mostCommonMood.emoji}
+          icon={<Book className="h-5 w-5" />}
+          subtitle={overviewMetrics.mostCommonMood.label}
+          color="accent"
+          isLoading={isLoading}
+        />
+        <MetricCard
+          title="Generate Data"
+          value="Demo Data"
+          icon={<Database className="h-5 w-5" />}
+          subtitle="Click to add 100 records"
+          color="success"
+          isLoading={demoImportLoading}
+          onClick={handleGenerateDummyData}
+          clickable={true}
+        />
+      </div>
+
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsContent value="overview" className="space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <WeeklySentimentChart weeklyMoodData={weeklyMoodData} isLoading={isLoading} />
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border">
+                <h2 className="text-lg font-semibold mb-4">Team Engagement Trends</h2>
+                <EngagementHeatmap />
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border">
+                <h2 className="text-lg font-semibold mb-4">Churn Risk Employees</h2>
+                <ChurnRiskTable />
+              </div>
+            </motion.div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Most Engaged Employees</h2>
+                <Button variant="outline" className="text-xs h-8">
+                  <Users className="h-3 w-3 mr-1" />
+                  View All
+                </Button>
+              </div>
+              <EngagedEmployeesTable />
+            </div>
+          </motion.div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

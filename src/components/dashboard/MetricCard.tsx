@@ -1,3 +1,4 @@
+
 import React from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import {
@@ -18,6 +19,8 @@ interface MetricCardProps {
   subtitle: string;
   color?: "primary" | "secondary" | "accent" | "muted" | "success" | "warning" | "danger";
   isLoading?: boolean;
+  onClick?: () => void;
+  clickable?: boolean;
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({
@@ -28,6 +31,8 @@ const MetricCard: React.FC<MetricCardProps> = ({
   subtitle,
   color = "primary",
   isLoading = false,
+  onClick,
+  clickable = false,
 }) => {
   
   const bgColorMap = {
@@ -66,7 +71,10 @@ const MetricCard: React.FC<MetricCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Card className={`overflow-hidden border ${borderColorMap[color]} hover:shadow-md transition-shadow duration-300`}>
+      <Card 
+        className={`overflow-hidden border ${borderColorMap[color]} hover:shadow-md transition-shadow duration-300 ${clickable ? 'cursor-pointer' : ''}`}
+        onClick={clickable ? onClick : undefined}
+      >
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-medium">{title}</CardTitle>

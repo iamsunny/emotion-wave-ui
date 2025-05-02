@@ -115,14 +115,14 @@ const generateDummyData = (count: number) => {
 };
 
 // Main function to insert dummy data
-export const insertDummyData = async (count: number = 1000) => {
+export const insertDummyData = async (count: number = 100) => {
   try {
     toast.info(`Generating ${count} dummy records...`);
     
     const dummyData = generateDummyData(count);
     
     // Insert in batches to avoid timeouts
-    const batchSize = 100;
+    const batchSize = 25;
     let inserted = 0;
     
     for (let i = 0; i < dummyData.length; i += batchSize) {
