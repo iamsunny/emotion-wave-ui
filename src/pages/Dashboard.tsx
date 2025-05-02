@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown, Users, Smile, Info } from "lucide-react";
 import {
@@ -42,19 +41,12 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 import Navigation from "@/components/Navigation";
+import { toast } from "@/components/ui/sonner";
 
-// Mock data for the dashboard
-const weeklyMoodData = [
-  { day: "Mon", Tech: 4.2, Sales: 3.8, HR: 4.0, Marketing: 3.5 },
-  { day: "Tue", Tech: 4.0, Sales: 3.9, HR: 3.8, Marketing: 3.7 },
-  { day: "Wed", Tech: 3.7, Sales: 4.1, HR: 3.5, Marketing: 3.9 },
-  { day: "Thu", Tech: 3.5, Sales: 4.3, HR: 3.6, Marketing: 4.1 },
-  { day: "Fri", Tech: 4.5, Sales: 4.5, HR: 4.2, Marketing: 4.4 },
-  { day: "Sat", Tech: 4.6, Sales: 4.2, HR: 4.0, Marketing: 3.8 },
-  { day: "Sun", Tech: 4.3, Sales: 4.0, HR: 3.9, Marketing: 3.7 },
-];
-
+// Mock data for the dashboard sections where we don't have real data yet
 const churnRiskData = [
   {
     id: "EMP-001",
@@ -131,6 +123,7 @@ interface MetricCardProps {
   trend?: "up" | "down" | "neutral";
   subtitle: string;
   color?: "primary" | "secondary" | "accent" | "muted";
+  isLoading?: boolean;
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({
@@ -140,6 +133,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
   trend,
   subtitle,
   color = "primary",
+  isLoading = false,
 }) => {
   const bgColorMap = {
     primary: "bg-primary/10",
@@ -166,7 +160,11 @@ const MetricCard: React.FC<MetricCardProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        {isLoading ? (
+          <Skeleton className="h-6 w-32" />
+        ) : (
+          <div className="text-2xl font-bold">{value}</div>
+        )}
         <div className="flex items-center mt-1 text-sm">
           {trend === "up" && <TrendingUp className="h-4 w-4 mr-1 text-green-500" />}
           {trend === "down" && <TrendingDown className="h-4 w-4 mr-1 text-red-500" />}
@@ -218,9 +216,154 @@ const EngagementHeatmap = () => {
   );
 };
 
+interface WeeklySentimentData {
+  day: string; 
+  avgScore: number;
+  dayOfWeek: string;
+}
+
 const Dashboard = () => {
   const [selectedTeam, setSelectedTeam] = useState<string>("All Teams");
-  
+  const [isLoading, setIsLoading] = useState(true);
+  const [overviewMetrics, setOverviewMetrics] = useState({
+    avgMoodScore: 0,
+    checkInRate: 0,
+    mostCommonMood: { emoji: "😐", label: "Neutral" },
+    trend: "neutral" as "up" | "down" | "neutral",
+    trendValue: "Stable",
+  });
+  const [weeklyMoodData, setWeeklyMoodData] = useState<WeeklySentimentData[]>([]);
+
+  // Fetch data from Supabase on component mount
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+
+        // Get dates for the past 7 days
+        const pastWeekDates = Array.from({ length: 7 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          return date;
+        }).reverse();
+
+        // Format dates for query and display
+        const formattedDates = pastWeekDates.map(date => {
+          return {
+            formatted: date.toISOString().split('T')[0],
+            dayOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()]
+          };
+        });
+
+        // Fetch average mood scores per day for the past week
+        const { data: weeklyMoodScores, error: weeklyMoodError } = await supabase
+          .from('emotion_analytics')
+          .select('created_at, score')
+          .gte('created_at', formattedDates[0].formatted)
+          .order('created_at', { ascending: true });
+
+        if (weeklyMoodError) {
+          console.error("Error fetching weekly moods:", weeklyMoodError);
+          throw new Error(weeklyMoodError.message);
+        }
+
+        // Process data into day-by-day averages
+        const dailyScores: Record<string, {total: number, count: number}> = {};
+        
+        weeklyMoodScores?.forEach(record => {
+          const dayKey = new Date(record.created_at).toISOString().split('T')[0];
+          
+          if (!dailyScores[dayKey]) {
+            dailyScores[dayKey] = { total: 0, count: 0 };
+          }
+          
+          dailyScores[dayKey].total += record.score;
+          dailyScores[dayKey].count += 1;
+        });
+
+        // Create formatted data for chart
+        const chartData: WeeklySentimentData[] = formattedDates.map(date => {
+          const scores = dailyScores[date.formatted];
+          const avgScore = scores ? Number((scores.total / scores.count).toFixed(1)) : 0;
+          
+          return {
+            day: date.formatted,
+            dayOfWeek: date.dayOfWeek,
+            avgScore: avgScore || 0
+          };
+        });
+
+        setWeeklyMoodData(chartData);
+
+        // Calculate overview metrics
+        const allScores = weeklyMoodScores?.map(item => item.score) || [];
+        const avgScore = allScores.length > 0 
+          ? Number((allScores.reduce((sum, score) => sum + score, 0) / allScores.length).toFixed(1))
+          : 0;
+
+        // Count frequency of each emoji to find most common
+        const { data: emojiFrequency, error: emojiError } = await supabase
+          .from('emotion_checkins')
+          .select('emoji, label, count(*)')
+          .gte('created_at', formattedDates[0].formatted)
+          .group('emoji, label')
+          .order('count', { ascending: false });
+
+        if (emojiError) {
+          console.error("Error fetching emoji frequency:", emojiError);
+        }
+
+        const mostCommonMood = emojiFrequency && emojiFrequency.length > 0
+          ? { emoji: emojiFrequency[0].emoji, label: emojiFrequency[0].label }
+          : { emoji: "😐", label: "Neutral" };
+
+        // Calculate trend by comparing first half of week to second half
+        const halfwayPoint = Math.floor(allScores.length / 2);
+        const firstHalfAvg = allScores.slice(0, halfwayPoint).reduce((sum, val) => sum + val, 0) / halfwayPoint || 0;
+        const secondHalfAvg = allScores.slice(halfwayPoint).reduce((sum, val) => sum + val, 0) / (allScores.length - halfwayPoint) || 0;
+        
+        let trend: "up" | "down" | "neutral" = "neutral";
+        let trendValue = "Stable";
+        
+        if (secondHalfAvg - firstHalfAvg > 0.3) {
+          trend = "up";
+          trendValue = "Improving";
+        } else if (firstHalfAvg - secondHalfAvg > 0.3) {
+          trend = "down";
+          trendValue = "Declining";
+        }
+
+        // Calculate check-in rate (mock for now - would need employee count)
+        // Assuming 50 total employees for now
+        const totalEmployees = 50;
+        const uniqueUsers = new Set(weeklyMoodScores?.map(record => record.user_id)).size;
+        const checkInRate = Math.round((uniqueUsers / totalEmployees) * 100);
+
+        setOverviewMetrics({
+          avgMoodScore: avgScore,
+          checkInRate: checkInRate,
+          mostCommonMood,
+          trend,
+          trendValue
+        });
+
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        toast.error("Failed to load dashboard data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // Format weekly mood data for chart
+  const chartData = weeklyMoodData.map(day => ({
+    day: day.dayOfWeek,
+    [selectedTeam === "All Teams" ? "All Teams" : selectedTeam]: day.avgScore
+  }));
+
   return (
     <div className="pb-24 pt-16 sm:pt-0 sm:pb-0">
       <Navigation />
@@ -239,33 +382,37 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <MetricCard
                 title="Avg Mood Score"
-                value="4.2"
+                value={isLoading ? "..." : overviewMetrics.avgMoodScore}
                 icon={<Smile />}
-                trend="up"
-                subtitle="8% increase from last week"
+                trend={overviewMetrics.trend}
+                subtitle={`${overviewMetrics.trendValue} trend`}
                 color="primary"
+                isLoading={isLoading}
               />
               <MetricCard
                 title="Check-in Rate"
-                value="78%"
+                value={isLoading ? "..." : `${overviewMetrics.checkInRate}%`}
                 icon={<Users />}
-                trend="down"
-                subtitle="3% decrease from yesterday"
+                trend={overviewMetrics.checkInRate > 70 ? "up" : overviewMetrics.checkInRate > 40 ? "neutral" : "down"}
+                subtitle="of employees participated"
                 color="secondary"
+                isLoading={isLoading}
               />
               <MetricCard
                 title="Most Common Mood"
-                value="😊 Happy"
+                value={isLoading ? "..." : `${overviewMetrics.mostCommonMood.emoji} ${overviewMetrics.mostCommonMood.label}`}
                 icon={<Smile />}
-                subtitle="38% of employees"
+                subtitle="among employees"
                 color="accent"
+                isLoading={isLoading}
               />
               <MetricCard
                 title="Team Pulse Trend"
-                value="Positive"
-                icon={<TrendingUp />}
-                subtitle="Gradually improving"
+                value={isLoading ? "..." : overviewMetrics.trendValue}
+                icon={overviewMetrics.trend === "up" ? <TrendingUp /> : overviewMetrics.trend === "down" ? <TrendingDown /> : <Smile />}
+                subtitle="Weekly pattern"
                 color="muted"
+                isLoading={isLoading}
               />
             </div>
           </section>
@@ -277,6 +424,7 @@ const Dashboard = () => {
               <Select
                 value={selectedTeam}
                 onValueChange={(value) => setSelectedTeam(value)}
+                disabled={isLoading}
               >
                 <SelectTrigger className="w-36">
                   <SelectValue placeholder="All Teams" />
@@ -292,74 +440,65 @@ const Dashboard = () => {
             </div>
             
             <Card className="p-4">
-              <ChartContainer 
-                className="h-[300px]"
-                config={{
-                  Tech: {
-                    label: "Tech Team",
-                    theme: { light: "#9b87f5", dark: "#9b87f5" }
-                  },
-                  Sales: {
-                    label: "Sales Team",
-                    theme: { light: "#7E69AB", dark: "#7E69AB" }
-                  },
-                  HR: {
-                    label: "HR Team",
-                    theme: { light: "#6E59A5", dark: "#6E59A5" }
-                  },
-                  Marketing: {
-                    label: "Marketing Team",
-                    theme: { light: "#D6BCFA", dark: "#D6BCFA" }
-                  }
-                }}
-              >
-                <LineChart data={weeklyMoodData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="day" />
-                  <YAxis domain={[1, 5]} tickCount={5} />
-                  <ChartTooltip
-                    content={
-                      <ChartTooltipContent />
+              {isLoading ? (
+                <div className="h-[300px] w-full flex items-center justify-center">
+                  <Skeleton className="h-full w-full rounded-md" />
+                </div>
+              ) : (
+                <ChartContainer 
+                  className="h-[300px]"
+                  config={{
+                    "All Teams": {
+                      label: "All Teams",
+                      theme: { light: "#9b87f5", dark: "#9b87f5" }
+                    },
+                    "Tech": {
+                      label: "Tech Team",
+                      theme: { light: "#9b87f5", dark: "#9b87f5" }
+                    },
+                    "Sales": {
+                      label: "Sales Team",
+                      theme: { light: "#7E69AB", dark: "#7E69AB" }
+                    },
+                    "HR": {
+                      label: "HR Team",
+                      theme: { light: "#6E59A5", dark: "#6E59A5" }
+                    },
+                    "Marketing": {
+                      label: "Marketing Team",
+                      theme: { light: "#D6BCFA", dark: "#D6BCFA" }
                     }
-                  />
-                  {(selectedTeam === "All Teams" || selectedTeam === "Tech") && (
-                    <Line
-                      type="monotone"
-                      dataKey="Tech"
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
+                  }}
+                >
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="day" />
+                    <YAxis domain={[0, 5]} tickCount={6} />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent />
+                      }
                     />
-                  )}
-                  {(selectedTeam === "All Teams" || selectedTeam === "Sales") && (
-                    <Line
-                      type="monotone"
-                      dataKey="Sales"
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
-                    />
-                  )}
-                  {(selectedTeam === "All Teams" || selectedTeam === "HR") && (
-                    <Line
-                      type="monotone"
-                      dataKey="HR"
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
-                    />
-                  )}
-                  {(selectedTeam === "All Teams" || selectedTeam === "Marketing") && (
-                    <Line
-                      type="monotone"
-                      dataKey="Marketing"
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
-                    />
-                  )}
-                </LineChart>
-              </ChartContainer>
+                    {selectedTeam !== "All Teams" ? (
+                      <Line
+                        type="monotone"
+                        dataKey={selectedTeam}
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    ) : (
+                      <Line
+                        type="monotone"
+                        dataKey="All Teams"
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    )}
+                  </LineChart>
+                </ChartContainer>
+              )}
             </Card>
           </section>
           

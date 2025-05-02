@@ -5,6 +5,8 @@ import EmojiCard from "@/components/EmojiCard";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/sonner";
 
 interface EmotionResponse {
   emoji: string;
@@ -36,19 +38,62 @@ const CheckIn: React.FC = () => {
     { emoji: "🥱", label: "Tired" },
   ];
 
-  const handleSubmit = (emoji: string, reason: string) => {
+  const handleSubmit = async (emoji: string, reason: string) => {
     setIsLoading(true);
     
-    // Simulate API call to get bot response
-    setTimeout(() => {
+    try {
+      // Get the currently logged in user (or use anonymous id for demo)
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id || 'anonymous-user';
+      
+      // Find the emotion to get its label and score
+      const selectedEmotion = emotions.find(e => e.emoji === emoji);
+      
+      if (!selectedEmotion) {
+        throw new Error("Selected emotion not found");
+      }
+      
+      // Get the score from emoji_scores table
+      const { data: scoreData } = await supabase
+        .from('emoji_scores')
+        .select('score')
+        .eq('emoji', emoji)
+        .single();
+      
+      const score = scoreData?.score || 3; // Default to neutral if not found
+      
+      // Insert the check-in into the database
+      const { error } = await supabase
+        .from('emotion_checkins')
+        .insert({
+          user_id: userId,
+          emoji: emoji,
+          label: selectedEmotion.label,
+          reason: reason,
+          score: score
+        });
+        
+      if (error) {
+        console.error("Error saving check-in:", error);
+        toast.error("Failed to save your check-in");
+        throw error;
+      }
+      
+      // Set response to update UI
       setResponse({
         emoji,
         reason,
         timestamp: new Date(),
       });
+      
+      toast.success("Your mood has been recorded!");
+    } catch (error) {
+      console.error("Check-in error:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
       setIsLoading(false);
       setExpandedEmoji(null);
-    }, 1500);
+    }
   };
 
   const getResponseMessage = (emoji: string) => {

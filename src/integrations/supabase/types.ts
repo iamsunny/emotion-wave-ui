@@ -9,10 +9,68 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      emoji_scores: {
+        Row: {
+          emoji: string
+          label: string
+          score: number
+        }
+        Insert: {
+          emoji: string
+          label: string
+          score: number
+        }
+        Update: {
+          emoji?: string
+          label?: string
+          score?: number
+        }
+        Relationships: []
+      }
+      emotion_checkins: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          label: string
+          reason: string | null
+          score: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          label: string
+          reason?: string | null
+          score: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          label?: string
+          reason?: string | null
+          score?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      emotion_analytics: {
+        Row: {
+          created_at: string | null
+          emoji: string | null
+          id: string | null
+          label: string | null
+          reason: string | null
+          score: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
