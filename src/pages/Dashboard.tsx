@@ -26,13 +26,17 @@ const Dashboard = () => {
     try {
       const success = await insertDummyData(1000);
       if (success) {
-        toast.success("Successfully generated 1000 dummy records!");
+        toast.success("Successfully generated dummy records!");
         // Reload page to refresh data
-        window.location.reload();
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        toast.error("Failed to generate all dummy records. Check console for details.");
       }
     } catch (error) {
       console.error("Error generating dummy data:", error);
-      toast.error("Failed to generate dummy data");
+      toast.error("Failed to generate dummy data. There might be permission issues with the database.");
     } finally {
       setDemoImportLoading(false);
     }
